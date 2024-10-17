@@ -1,140 +1,68 @@
-const img = document.querySelector("img");
-const music = document.querySelector('audio'); // Use this for both volume and playback
-const play = document.getElementById('play');
-const artist = document.getElementById('artist');
-const title = document.getElementById('title');
-const prev = document.getElementById('prev');
-const next = document.getElementById('next');
-const volumeSlider = document.getElementById('volume-slider');
-const volumeIcon = document.getElementById('volume-icon');
+const currentTime = document.querySelector("h1"),
+content = document.querySelector(".content"),
+selectMenu = document.querySelectorAll("select"),
+setAlarmBtn = document.querySelector("button");
 
-let progress = document.getElementById("progress");
-const durationDisplay = document.getElementById("duration");
-let currentTimeDisplay = document.getElementById("current_time");
-const progress_div = document.getElementById('progress_div');
+let alarmTime, isAlarmSet,
+ringtone = new Audio("./files/ringtone.mp3");
 
-const songs = [
-    {
-        name: "sahil-1",
-        title: "Lotus lane",
-        artist: "loyalist",
-    },
-    {
-        name: "sahil-2",
-        title: "sappheiros",
-        artist: "Aurora",
-    },
-    {
-        name: "sahil-3",
-        title: "Walking Firiri",
-        artist: "Gorakhali Takma",
-    },
-];
+for (let i = 12; i > 0; i--) {
+    i = i < 10 ? `0${i}` : i;
+    let option = `<option value="${i}">${i}</option>`;
+    selectMenu[0].firstElementChild.insertAdjacentHTML("afterend", option);
+}
 
-let songIndex = 0;
+for (let i = 59; i >= 0; i--) {
+    i = i < 10 ? `0${i}` : i;
+    let option = `<option value="${i}">${i}</option>`;
+    selectMenu[1].firstElementChild.insertAdjacentHTML("afterend", option);
+}
 
-// Load song function
-const loadSong = (song) => {
-    title.textContent = song.title;
-    artist.textContent = song.artist;
-    music.src = "music/" + song.name + ".mp3";
-    img.src = "images/" + song.name + ".jpeg";
-};
+for (let i = 2; i > 0; i--) {
+    let ampm = i == 1 ? "AM" : "PM";
+    let option = `<option value="${ampm}">${ampm}</option>`;
+    selectMenu[2].firstElementChild.insertAdjacentHTML("afterend", option);
+}
 
-// Load the first song initially
-loadSong(songs[songIndex]);
+setInterval(() => {
+    let date = new Date(),
+    h = date.getHours(),
+    m = date.getMinutes(),
+    s = date.getSeconds(),
+    ampm = "AM";
+    if(h >= 12) {
+        h = h - 12;
+        ampm = "PM";
+    }
+    h = h == 0 ? h = 12 : h;
+    h = h < 10 ? "0" + h : h;
+    m = m < 10 ? "0" + m : m;
+    s = s < 10 ? "0" + s : s;
+    currentTime.innerText = `${h}:${m}:${s} ${ampm}`;
 
-// Next song function
-const nextSong = () => {
-    songIndex = (songIndex + 1) % songs.length;
-    loadSong(songs[songIndex]);
-    playMusic();
-};
-
-// Previous song function
-const prevSong = () => {
-    songIndex = (songIndex - 1 + songs.length) % songs.length;
-    loadSong(songs[songIndex]);
-    playMusic();
-};
-
-// Progress bar and time update
-music.addEventListener('timeupdate', (event) => {
-    const { currentTime, duration } = event.srcElement;
-
-    if (!isNaN(duration)) {
-        let progress_time = (currentTime / duration) * 100;
-        progress.style.width = `${progress_time}%`;
-        currentTimeDisplay.textContent = formatTime(currentTime);
-        durationDisplay.textContent = formatTime(duration);
+    if (alarmTime === `${h}:${m} ${ampm}`) {
+        ringtone.play();
+        ringtone.loop = true;
     }
 });
 
-// Click on progress bar to move
-progress_div.addEventListener('click', (event) => {
-    const { duration } = music;
-    let move_progress = (event.offsetX / event.srcElement.clientWidth) * duration;
-    music.currentTime = move_progress;
-});
-
-// When the song ends, play the next song
-music.addEventListener('ended', nextSong);
-
-// Utility function to format time in minutes:seconds (mm:ss)
-const formatTime = (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-};
-
-// Next and previous button event listeners
-next.addEventListener('click', nextSong);
-prev.addEventListener('click', prevSong);
-
-// Play music function
-const playMusic = () => {
-    music.play();
-    play.classList.replace('fa-play', 'fa-pause');
-    img.classList.add('anime');
-};
-
-// Pause music function
-const pauseMusic = () => {
-    music.pause();
-    play.classList.replace('fa-pause', 'fa-play');
-    img.classList.remove('anime');
-};
-
-// Play/pause toggle event listener
-play.addEventListener('click', () => {
-    if (music.paused) {
-        playMusic();
-    } else {
-        pauseMusic();
+function setAlarm() {
+    if (isAlarmSet) {
+        alarmTime = "";
+        ringtone.pause();
+        content.classList.remove("disable");
+        setAlarmBtn.innerText = "Set Alarm";
+        return isAlarmSet = false;
     }
-});
 
-// Volume Control
-volumeSlider.addEventListener('input', (e) => {
-    music.volume = e.target.value; // Use the same "music" element for volume control
-
-    // Update volume icon based on volume level
-    if (music.volume === 0) {
-        volumeIcon.classList.replace('fa-volume-up', 'fa-volume-mute');
-    } else {
-        volumeIcon.classList.replace('fa-volume-mute', 'fa-volume-up');
+    let time = `${selectMenu[0].value}:${selectMenu[1].value} ${selectMenu[2].value}`;
+    if (time.includes("Hour") || time.includes("Minute") || time.includes("AM/PM")) {
+        return alert("Please, select a valid time to set Alarm!");
     }
-});
+    alarmTime = time;
+    isAlarmSet = true;
+    content.classList.add("disable");
+    setAlarmBtn.innerText = "Clear Alarm";
+}
 
-// Mute/Unmute by clicking the volume icon
-volumeIcon.addEventListener('click', () => {
-    if (music.volume > 0) {
-        music.volume = 0;
-        volumeSlider.value = 0;
-        volumeIcon.classList.replace('fa-volume-up', 'fa-volume-mute');
-    } else {
-        music.volume = 1;
-        volumeSlider.value = 1;
-        volumeIcon.classList.replace('fa-volume-mute', 'fa-volume-up');
-    }
-});
+setAlarmBtn.addEventListener("click", setAlarm);
